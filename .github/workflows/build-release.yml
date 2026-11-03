@@ -1,0 +1,49 @@
+name: Build and publish Windows EXE
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install ps2exe
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name ps2exe -Scope CurrentUser -Force
+
+      - name: Build executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Invoke-PS2EXE -inputFile "scripts/Copy-Usb.ps1" -outputFile "dist/DoomsdayUSB.exe" -title "Doomsday USB" -description "Safe file-level USB copier" -company "doomsday-usb" -product "Doomsday USB" -version "0.1.0"
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          Copy-Item README.md, TESTING.md, CHANGELOG.md, LICENSE dist/
+          Compress-Archive -Path dist/* -DestinationPath "DoomsdayUSB-Alpha.zip" -Force
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Doomsday USB Alpha ${{ github.ref_name }}"
+          body: |
+            **Experimental alpha build. Test with spare USB drives first.**
+
+            This is a file-level copy, not a sector-by-sector or bootable disk clone. It does not format or erase the destination. Review the README and TESTING checklist before use.
+          files: |
+            dist/DoomsdayUSB.exe
+            DoomsdayUSB-Alpha.zip
+          draft: false
+          prerelease: true
