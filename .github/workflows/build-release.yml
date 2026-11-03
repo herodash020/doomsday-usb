@@ -1,4 +1,4 @@
-name: Build and publish Windows EXE
+name: Build and publish Windows GUI installer
 
 on:
   push:
@@ -22,11 +22,11 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name ps2exe -Scope CurrentUser -Force
 
-      - name: Build executable
+      - name: Build GUI executable
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Invoke-PS2EXE -inputFile "scripts/Copy-Usb.ps1" -outputFile "dist/DoomsdayUSB.exe" -title "Doomsday USB" -description "Safe file-level USB copier" -company "doomsday-usb" -product "Doomsday USB" -version "0.1.0"
+          Invoke-PS2EXE -inputFile "scripts/Installer-GUI.ps1" -outputFile "dist/DoomsdayUSB-Installer.exe" -title "Doomsday USB Installer" -description "USB installer with normal and custom wiki modes" -company "doomsday-usb" -product "Doomsday USB" -version "0.2.0" -noConsole
 
       - name: Package release
         shell: pwsh
@@ -39,11 +39,12 @@ jobs:
         with:
           name: "Doomsday USB Alpha ${{ github.ref_name }}"
           body: |
-            **Experimental alpha build. Test with spare USB drives first.**
+            **Experimental alpha GUI installer. Test with spare USB drives first.**
 
-            This is a file-level copy, not a sector-by-sector or bootable disk clone. It does not format or erase the destination. Review the README and TESTING checklist before use.
+            Normal install copies all source files. Custom install copies the non-wiki system files and only the selected .zim archives.
+            This is a file-level copy, not a sector clone. It does not format or erase the destination.
           files: |
-            dist/DoomsdayUSB.exe
+            dist/DoomsdayUSB-Installer.exe
             DoomsdayUSB-Alpha.zip
           draft: false
           prerelease: true
